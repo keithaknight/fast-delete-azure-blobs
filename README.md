@@ -45,6 +45,8 @@ Options:
   -x, --concurrency <i>  CONCURRENCY. The number of delete operations to perform at a time. Defaults to "100".
   -e, --on-error <s>     ON_ERROR. When an error is encountered during delete, the process can "halt" or "continue". Default is "halt".
   -r, --retries <i>      RETRIES. You can specify a number of times to retry the deletion. Default is "0".
+  -f, --name-file <s>    Blob name file. A file with line separated blob names to delete.
+  --name-file-prefix <s> Blob name file prefix. A prefix to append to values in the name file.
   -h, --help             output usage information
 ```
 
