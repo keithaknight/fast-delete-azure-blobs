@@ -32,7 +32,7 @@ cmd
     .option("-e, --on-error <s>", `ON_ERROR. When an error is encountered during delete, the process can "halt" or "continue". Default is "halt".`)
     .option("-r, --retries <i>", `RETRIES. You can specify a number of times to retry the deletion. Default is "0".`, parseInt)
     .option("-f, --name-file <s>", `Blob name file. A file with line separated blob names to delete.`)
-    .option("--name-file-prefix <s>", `Blob Name File Prefix. A prefix to append to values in the name file.`)
+    .option("--name-file-prefix <s>", `Blob name file prefix. A prefix to append to values in the name file.`)
     .parse(process.argv);
 
 // globals
