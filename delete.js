@@ -31,6 +31,8 @@ cmd
     .option("-x, --concurrency <i>", `CONCURRENCY. The number of delete operations to perform at a time. Defaults to "100".`, parseInt)
     .option("-e, --on-error <s>", `ON_ERROR. When an error is encountered during delete, the process can "halt" or "continue". Default is "halt".`)
     .option("-r, --retries <i>", `RETRIES. You can specify a number of times to retry the deletion. Default is "0".`, parseInt)
+    .option("-f, --name-file <s>", `Blob name file. A file with line separated blob names to delete.`)
+    .option("--name-file-prefix <s>", `Blob Name File Prefix. A prefix to append to values in the name file.`)
     .parse(process.argv);
 
 // globals
@@ -41,6 +43,8 @@ const STORAGE_SAS = cmd.sas || process.env.STORAGE_SAS;
 const STORAGE_KEY = cmd.key || process.env.STORAGE_KEY;
 const PREFIX = cmd.prefix || process.env.PREFIX;
 const MODE = cmd.mode || process.env.MODE || "test";
+const NAMEFILE = cmd.nameFile || process.env.NAMEFILE;
+const NAMEFILE_PREFIX = cmd.nameFilePrefix || process.env.NAMEFILE_PREFIX;
 let CONCURRENCY = cmd.concurrency || process.env.CONCURRENCY || 100;
 CONCURRENCY = parseInt(CONCURRENCY);
 if (isNaN(CONCURRENCY)) CONCURRENCY = 100;
@@ -89,6 +93,8 @@ logger.info(`MODE = "${MODE}".`);
 logger.info(`CONCURRENCY = "${CONCURRENCY}".`);
 logger.info(`ON_ERROR = "${ON_ERROR}".`);
 logger.info(`RETRIES = "${RETRIES}".`);
+logger.info(`NAMEFILE = "${NAMEFILE}.`);
+logger.info(`NAMEFILE_PREFIX = "${NAMEFILE}.`);
 
 // check requirements
 if (!STORAGE_ACCOUNT) throw new Error("You must specify STORAGE_ACCOUNT in either .env or command line.");
@@ -170,10 +176,10 @@ function deleteBlob(filename) {
                 resolve();
             } else if (error) {
                 logger.error(`failed to delete "${filename}${(response && response.statusCode) ? " (HTTP: " + response.statusCode + ")" : ""}": ${error}`);
-                reject(error);
+                resolve();
             } else {
                 logger.error(`failed to delete "${filename}": ${response.statusCode}: ${response.statusMessage}`);
-                reject(new Error(`${response.statusCode}: ${response.statusMessage}`));
+                resolve();
             }
         });
 
@@ -182,6 +188,30 @@ function deleteBlob(filename) {
 
 function listBlobs(marker) {
     return new Promise((resolve, reject) => {
+        if (NAMEFILE) {
+            logger.log("debug", `retrieving blob names from file "${NAMEFILE}"...`);
+            try {
+                const fs = require("fs");
+                const fileContent = fs.readFileSync(NAMEFILE, "UTF-8");
+                const blobNames = fileContent.split(/\r?\n/);
+                if (NAMEFILE_PREFIX) {
+                    for (i=0;i<blobNames.length;i++) {
+                        blobNames[i] = NAMEFILE_PREFIX + blobNames[i];
+                    }
+                }
+
+                resolve({
+                    filenames: blobNames,
+                    marker: null
+                });
+            }
+            catch (ex) {
+                logger.log("error", `blob name file not found "${NAMEFILE}"`);
+                reject(ex);
+            }
+  
+            return;
+        }
 
         // log start
         if (PREFIX) {
